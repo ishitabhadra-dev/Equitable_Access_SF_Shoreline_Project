@@ -28,28 +28,39 @@ from shoreline_compare import (
 BASE = Path(__file__).resolve().parent
 DATASETS = BASE / "Datasets"
 
+
+def _data_dir() -> Path:
+    """Use `Datasets/` when files live there (local); else repo root (flat GitHub uploads)."""
+    if (DATASETS / "Alameda_county_demographics.csv").exists():
+        return DATASETS
+    return BASE
+
+
+# Resolved once at import so paths match the layout Streamlit Cloud actually checked out.
+_DATA = _data_dir()
+
 # County label → ACS profile CSV (2024 Estimate column), same layout as Alameda/Napa.
 COUNTY_ACS_FILES: tuple[tuple[str, Path], ...] = (
-    ("Alameda", DATASETS / "Alameda_county_demographics.csv"),
-    ("Contra Costa", DATASETS / "Contra_costa_county_demographics.csv"),
-    ("Marin", DATASETS / "Marin_county_demographics.csv"),
-    ("Napa", DATASETS / "Napa_county_demographics.csv"),
-    ("San Francisco", DATASETS / "SF_county_demographics.csv"),
-    ("San Mateo", DATASETS / "San_mateo_county_demographics.csv"),
-    ("Santa Clara", DATASETS / "Santa_clara_county_demographics.csv"),
-    ("Solano", DATASETS / "Solano_county_demographics.csv"),
-    ("Sonoma", DATASETS / "Sonoma_county_demographics.csv"),
+    ("Alameda", _DATA / "Alameda_county_demographics.csv"),
+    ("Contra Costa", _DATA / "Contra_costa_county_demographics.csv"),
+    ("Marin", _DATA / "Marin_county_demographics.csv"),
+    ("Napa", _DATA / "Napa_county_demographics.csv"),
+    ("San Francisco", _DATA / "SF_county_demographics.csv"),
+    ("San Mateo", _DATA / "San_mateo_county_demographics.csv"),
+    ("Santa Clara", _DATA / "Santa_clara_county_demographics.csv"),
+    ("Solano", _DATA / "Solano_county_demographics.csv"),
+    ("Sonoma", _DATA / "Sonoma_county_demographics.csv"),
 )
 
 COUNTIES: tuple[str, ...] = tuple(c for c, _ in COUNTY_ACS_FILES)
 
 SHORELINE_CANDIDATES = [
-    DATASETS / "shoreline_access_data.csv",
-    DATASETS / "Shoreline_Access_Data.csv",
-    DATASETS / "shorelines_access_dataset.csv",
+    _DATA / "shoreline_access_data.csv",
+    _DATA / "Shoreline_Access_Data.csv",
+    _DATA / "shorelines_access_dataset.csv",
 ]
 SHORELINE_DEFAULT_NAME = "shoreline_access_data.csv"
-SHORELINE_EXAMPLE = DATASETS / "shorelines_access_dataset.example.csv"
+SHORELINE_EXAMPLE = _DATA / "shorelines_access_dataset.example.csv"
 
 ACCESS_MODES: list[tuple[str, str]] = [
     ("walk", "Walk"),
@@ -299,7 +310,7 @@ def main() -> None:
     missing_acs = [(c, p) for c, p in COUNTY_ACS_FILES if not p.exists()]
     if missing_acs:
         lines = "\n".join(f"- **{c}** → `{p.name}`" for c, p in missing_acs)
-        st.error(f"Missing ACS county CSV(s) in `{DATASETS}`:\n\n{lines}")
+        st.error(f"Missing ACS county CSV(s) in `{_DATA}`:\n\n{lines}")
         return
 
     try:
@@ -331,7 +342,7 @@ def main() -> None:
     if raw_shore is None:
         st.error(
             f"Missing shoreline CSV. Add **`{SHORELINE_DEFAULT_NAME}`** or **`Shoreline_Access_Data.csv`** "
-            f"to `{DATASETS}`."
+            f"to `{_DATA}` (or a `Datasets` subfolder with the same files)."
         )
         st.subheader("ACS 2024 benchmarks (reference table)")
         ref = long_df[long_df["category"].isin(COMPOSITION_CATEGORIES)]
